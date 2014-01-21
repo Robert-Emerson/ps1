@@ -22,12 +22,18 @@ static PORT:        int = 4414;
 fn main() {
     let addr = from_str::<SocketAddr>(format!("{:s}:{:d}", IP, PORT)).unwrap();
     let mut acceptor = net::tcp::TcpListener::bind(addr).listen();
+    let mut visitor_count = 0;
     
     println(format!("Listening on [{:s}] ...", addr.to_str()));
     
     for stream in acceptor.incoming() {
         // Spawn a task to handle the connection
-        do spawn {
+
+	visitor_count += 1;
+	let count = visitor_count;
+        println!("Visitor count: {}", visitor_count);
+
+	do spawn {
             let mut stream = stream;
             
             match stream {
@@ -57,6 +63,7 @@ fn main() {
                  </body></html>\r\n";
             stream.write(response.as_bytes());
             println!("Connection terminates.");
+	    println!("Count: {}", count);
         }
     }
 }
