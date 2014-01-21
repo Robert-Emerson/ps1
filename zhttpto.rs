@@ -30,7 +30,7 @@ fn main() {
         // Spawn a task to handle the connection
 
 	visitor_count += 1;
-	let count = visitor_count;
+	let count: int = visitor_count;
         println!("Visitor count: {}", visitor_count);
 
 	do spawn {
@@ -59,9 +59,10 @@ fn main() {
                         h2 { font-size:2cm; text-align: center; color: black; text-shadow: 0 0 4mm green}
                  </style></head>
                  <body>
-                 <h1>Greetings, Krusty!</h1>
+                 <h1>Greetings, visitor $$!</h1>
                  </body></html>\r\n";
-            stream.write(response.as_bytes());
+	    let new_response = std::str::replace(response, "$$", count.to_str());
+            stream.write(new_response.as_bytes());
             println!("Connection terminates.");
 	    println!("Count: {}", count);
         }
