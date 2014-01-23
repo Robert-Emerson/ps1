@@ -50,9 +50,39 @@ fn main() {
             stream.read(buf);
             let request_str = str::from_utf8(buf);
             println(format!("Received request :\n{:s}", request_str));
-            
-            let response: ~str = 
-                ~"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n
+	    let wordvec: ~[&str] = request_str.split(' ').collect();
+	    let magic_word = &"GET";
+	    let magic_word2 = &"/";
+	    if   wordvec[0].eq(&magic_word) && !wordvec[1].eq(&magic_word2) {
+		let filepath = &Path::new("/home/robert/cs4414/ps1/"+ wordvec[1]);
+		if filepath.exists() {
+		    let mut file = File::open(filepath);
+		    let response: ~str = ~"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream;\r\nContent-Disposition: attachment; filename*=UTF-8''";
+		    let filename = wordvec[1].slice_from(1);
+
+		    let temp = response + filename + "\r\n\r\n" + file.read_to_str();
+		    stream.write(temp.as_bytes()); 
+		}
+		else if !filepath.exists() {
+		    let response: ~str = 
+		        ~"HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/html; charset=UTF-8\r\n
+		    <doctype !html><html><head><title>Hello, Rust!</title>
+		    <style>body { background-color: #111; color: #FFEEAA }
+			    h1 { font-size:2cm; text-align: center; color: white; text-shadow: 0 0 4mm black}
+			    h2 { font-size:2cm; text-align: center; color: black; text-shadow: 0 0 4mm green}
+		    </style></head>
+		    <body>
+		    <h1>Sorry bud, that page can't be found!</h1>
+		    </body></html>\r\n";
+		    
+		    stream.write(response.as_bytes());
+		}
+		
+	    }
+	    else {
+         
+                let response: ~str = 
+                    ~"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n
                  <doctype !html><html><head><title>Hello, Rust!</title>
                  <style>body { background-color: #111; color: #FFEEAA }
                         h1 { font-size:2cm; text-align: center; color: black; text-shadow: 0 0 4mm red}
@@ -61,9 +91,10 @@ fn main() {
                  <body>
                  <h1>Greetings, visitor $$!</h1>
                  </body></html>\r\n";
-	    let new_response = std::str::replace(response, "$$", count.to_str());
-            stream.write(new_response.as_bytes());
-            println!("Connection terminates.");
+	        let new_response = std::str::replace(response, "$$", count.to_str());
+                stream.write(new_response.as_bytes());
+            }
+	    println!("Connection terminates.");
 	    println!("Count: {}", count);
         }
     }
