@@ -31,7 +31,6 @@ fn main() {
 
 	visitor_count += 1;
 	let count: int = visitor_count;
-        println!("Visitor count: {}", visitor_count);
 
 	do spawn {
             let mut stream = stream;
@@ -50,52 +49,61 @@ fn main() {
             stream.read(buf);
             let request_str = str::from_utf8(buf);
             println(format!("Received request :\n{:s}", request_str));
+	    println!("Visitor count: {}", count);
+	    
 	    let wordvec: ~[&str] = request_str.split(' ').collect();
-	    let magic_word = &"GET";
-	    let magic_word2 = &"/";
-	    if   wordvec[0].eq(&magic_word) && !wordvec[1].eq(&magic_word2) {
-		let filepath = &Path::new("/home/robert/cs4414/ps1/"+ wordvec[1]);
-		if filepath.exists() {
-		    let mut file = File::open(filepath);
-		    let response: ~str = ~"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream;\r\nContent-Disposition: attachment; filename*=UTF-8''";
-		    let filename = wordvec[1].slice_from(1);
-
-		    let temp = response + filename + "\r\n\r\n" + file.read_to_str();
-		    stream.write(temp.as_bytes()); 
-		}
-		else if !filepath.exists() {
-		    let response: ~str = 
-		        ~"HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/html; charset=UTF-8\r\n
-		    <doctype !html><html><head><title>Hello, Rust!</title>
-		    <style>body { background-color: #111; color: #FFEEAA }
-			    h1 { font-size:2cm; text-align: center; color: white; text-shadow: 0 0 4mm black}
-			    h2 { font-size:2cm; text-align: center; color: black; text-shadow: 0 0 4mm green}
-		    </style></head>
-		    <body>
-		    <h1>Sorry bud, that page can't be found!</h1>
-		    </body></html>\r\n";
-		    
-		    stream.write(response.as_bytes());
-		}
+	    let current_dir = std::os::getcwd(); 
+	    let filepath = Path::new(current_dir.as_str().unwrap() + wordvec[1]);
+	    let response = open_file(filepath, current_dir, count);
+	    
+	    stream.write(response.as_bytes());
 		
-	    }
-	    else {
-         
-                let response: ~str = 
-                    ~"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n
-                 <doctype !html><html><head><title>Hello, Rust!</title>
-                 <style>body { background-color: #111; color: #FFEEAA }
-                        h1 { font-size:2cm; text-align: center; color: black; text-shadow: 0 0 4mm red}
-                        h2 { font-size:2cm; text-align: center; color: black; text-shadow: 0 0 4mm green}
-                 </style></head>
-                 <body>
-                 <h1>Greetings, visitor $$!</h1>
-                 </body></html>\r\n";
-	        let new_response = std::str::replace(response, "$$", count.to_str());
-                stream.write(new_response.as_bytes());
-            }
-	    println!("Connection terminates.");
-	    println!("Count: {}", count);
+	    println!("Connection terminates.\n");
         }
     }
+}
+
+fn open_file(filepath: Path, current_dir: Path, counter: int) -> ~str {  
+  
+  match (filepath.exists()) {
+    true => {	      
+	      let filestring = filepath.as_str().unwrap();
+	      
+	      if filestring.ends_with(".html") {
+		let mut file = File::open(&filepath);
+		
+		let temp = ~"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n";
+		let response = temp + file.read_to_str();
+		
+		return response;
+	      }
+	      else if filepath != current_dir {
+		let response: ~str = 
+		        ~"HTTP/1.1 403 FORBIDDEN\r\nContent-Type: text/html; charset=UTF-8\r\n
+			<doctype !html><html><head><title>Nope. Not allowed!</title>
+			<style>body { background-color: #FFF; color: #FFEEAA }
+				h1 { font-size:2cm; text-align: center; color: black; text-shadow: 0 0 4mm black}
+				h2 { font-size:2cm; text-align: center; color: black; text-shadow: 0 0 4mm green}
+			</style></head>
+			<body>
+			<h1>ERROR 403</h1>
+			<h2>Sorry bud, you don't have permission for that</h2>
+			</body></html>\r\n";
+		return response;
+	      }
+	    },
+    false => println("File doesn't exist, so we display the homepage!")
+  };
+  let temp = ~"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n
+	      <doctype !html><html><head><title>Hello, Rust!</title>
+	      <style>body { background-color: #111; color: #FFEEAA }
+		    h1 { font-size:2cm; text-align: center; color: black; text-shadow: 0 0 4mm red}
+		    h2 { font-size:2cm; text-align: center; color: black; text-shadow: 0 0 4mm green}
+	      </style></head>
+	      <body>
+	      <h1>Greetings, visitor $$!</h1>
+	    </body></html>\r\n";
+
+  let response = std::str::replace(temp, "$$", counter.to_str());
+  return response;
 }
