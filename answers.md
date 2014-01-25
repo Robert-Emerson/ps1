@@ -1,0 +1,6 @@
+Title: Problem Set 1 Answers
+Author: Robert Emerson (roe2pj)
+
+1. User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv 25.0) Gecko 20100101 Firefox/25.0 This user-agent string tells me that I've accessed the web page using Mozilla Firefox version 25.0 from an X11 graphical environment running on a 64-bit Linux installation. My browser is using the Gecko layout engine, as developed by Mozilla, and the 20100101 seems to be a date, referring to January 1st, 2010. I'm not sure what this date references, as it is January 21, 2014, though a quick Google search reveals that this is the geckotrail for all desktop Firefox instances. All this makes sense, as I am running Firefox 25.0 (without updates) on an OpenSUSE 13.1 64-bit system, and am using X11 as a window manager.
+
+2. While using a global mut variable is a solution to this problem, I can see why Rust requires it to be placed in an unsafe block. Global variables disregard scope constraints, allowing them to be modified anywhere in the code, making it hard to know when a variable has been changed. This is especially bad for multithreaded programs as one thread could change the value without the other threads knowing, leading to race conditions and incorrect values in the code. Since it also disregards scope, it will never be deallocated, possibly leading to memory leaks and other performance issues.
